@@ -6,17 +6,15 @@ import { Lang } from '@/types/survey'
 
 const TEXTS = {
   th: [
-    'กำลังวิเคราะห์รูปแบบการทำงาน...',
-    'ตรวจสอบระดับพลังงานบีเวอร์...',
-    'วัดระดับ burnout...',
-    'ค้นหาอาณานิคมที่เหมาะกับคุณ...',
+    'กำลังวิเคราะห์รูปแบบบีเวอร์ของคุณ...',
+    'ตรวจสอบระดับพลังงานในอาณานิคม...',
+    'เทียบข้อมูลกับบีเวอร์ทั้ง 12 ตัว...',
     'เกือบแล้ว...',
   ],
   en: [
-    'Analyzing your work patterns...',
-    'Checking beaver energy levels...',
-    'Measuring burnout index...',
-    'Finding your colony match...',
+    'Analyzing your beaver patterns...',
+    'Checking colony energy levels...',
+    'Comparing with all 12 beaver types...',
     'Almost there...',
   ],
 }
@@ -32,8 +30,8 @@ export default function LoadingScreen({ onComplete, lang }: Props) {
   const texts = TEXTS[lang]
 
   useEffect(() => {
-    const duration = 3200
-    const steps = 60
+    const duration = 2800
+    const steps = 56
     const interval = duration / steps
     let step = 0
 
@@ -41,7 +39,6 @@ export default function LoadingScreen({ onComplete, lang }: Props) {
       step++
       setProgress(Math.min((step / steps) * 100, 100))
       setTextIndex(Math.min(Math.floor((step / steps) * texts.length), texts.length - 1))
-
       if (step >= steps) {
         clearInterval(timer)
         setTimeout(onComplete, 300)
@@ -57,8 +54,9 @@ export default function LoadingScreen({ onComplete, lang }: Props) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="min-h-screen flex flex-col items-center justify-center px-6"
+      style={{ background: 'var(--bg-primary)' }}
     >
-      {/* Spinning rings around beaver */}
+      {/* Spinning rings + beaver */}
       <div className="relative w-36 h-36 mb-10">
         <motion.div
           className="absolute inset-0 rounded-full border-2 border-transparent"
@@ -100,22 +98,15 @@ export default function LoadingScreen({ onComplete, lang }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Progress bar */}
-      <div
-        className="w-64 h-1.5 rounded-full overflow-hidden"
-        style={{ background: 'var(--border-card)' }}
-      >
+      {/* Progress */}
+      <div className="w-64 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-card)' }}>
         <motion.div
           className="h-full rounded-full progress-fill"
           style={{ width: `${progress}%` }}
           transition={{ duration: 0.1 }}
         />
       </div>
-
-      <p
-        className="text-xs mt-3 thai-text"
-        style={{ color: 'var(--text-muted)' }}
-      >
+      <p className="text-xs mt-3 thai-text" style={{ color: 'var(--text-muted)' }}>
         {Math.round(progress)}%
       </p>
     </motion.div>

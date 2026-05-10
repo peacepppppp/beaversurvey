@@ -16,11 +16,9 @@ export default function Home() {
   const [result, setResult] = useState<SurveyResult | null>(null)
   const [answers, setAnswers] = useState<SurveyAnswer[]>([])
   const [lang, setLang] = useState<Lang>('th')
-  const [isKKU, setIsKKU] = useState<boolean | null>(null)
 
-  const handleStart = useCallback((selectedLang: Lang, kku: boolean) => {
+  const handleStart = useCallback((selectedLang: Lang) => {
     setLang(selectedLang)
-    setIsKKU(kku)
     setPhase('survey')
     setSurveyPhase('survey')
   }, [])
@@ -42,7 +40,6 @@ export default function Home() {
   const handleRetake = useCallback(() => {
     setResult(null)
     setAnswers([])
-    setIsKKU(null)
     setPhase('onboarding')
     setSurveyPhase('survey')
   }, [])
@@ -53,7 +50,6 @@ export default function Home() {
         {phase === 'onboarding' && (
           <OnboardingScreen key="onboarding" onStart={handleStart} />
         )}
-
         {phase === 'survey' && (
           <SurveyContainer
             key="survey"
@@ -63,11 +59,9 @@ export default function Home() {
             lang={lang}
           />
         )}
-
         {phase === 'loading' && (
           <LoadingScreen key="loading" onComplete={handleLoadingComplete} lang={lang} />
         )}
-
         {phase === 'result' && result && (
           <ResultCard
             key="result"
@@ -75,7 +69,6 @@ export default function Home() {
             answers={answers}
             onRetake={handleRetake}
             lang={lang}
-            isKKU={isKKU ?? false}
           />
         )}
       </AnimatePresence>

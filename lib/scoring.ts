@@ -6,7 +6,6 @@ const SCORED_DIMENSIONS: Dimension[] = [
   'social', 'occupational', 'intellectual', 'environmental',
   'spiritual', 'financial', 'emotional', 'physical',
 ]
-
 const ALL_DIMENSIONS: Dimension[] = [...SCORED_DIMENSIONS, 'burnout']
 
 function emptyScores(): DimensionScores {
@@ -46,16 +45,10 @@ function computeTheoreticalMax(): DimensionScores {
 export function normalizeScores(raw: DimensionScores): DimensionScores {
   const theoretical = computeTheoreticalMax()
   const normalized = emptyScores()
-  for (const dim of SCORED_DIMENSIONS) {
+  for (const dim of ALL_DIMENSIONS) {
     const max = theoretical[dim]
-    normalized[dim] = max > 0 ? Math.round((raw[dim] / max) * 100) : 0
+    normalized[dim] = max > 0 ? Math.max(0, Math.round((raw[dim] / max) * 100)) : 0
   }
-  // Burnout: derived from OCC, PHY, EMO, SOC using weighted formula.
-  // High OCC + low PHY/EMO/SOC = high burnout.
-  // Formula: (OCC*2 - SOC - PHY - EMO + 100) / 2, clamped 0–100.
-  const { occupational: OCC, social: SOC, physical: PHY, emotional: EMO } = normalized
-  const rawBurnout = (OCC * 2 - SOC - PHY - EMO + 100) / 2
-  normalized.burnout = Math.round(Math.min(100, Math.max(0, rawBurnout)))
   return normalized
 }
 
@@ -72,85 +65,60 @@ export function selectArchetype(s: DimensionScores) {
   const topDim = SCORED_DIMENSIONS.slice().sort((a, b) => s[b] - s[a])[0]
   const allInRange = (lo: number, hi: number) => vals.every((v) => v >= lo && v <= hi)
 
-  // ── SUPER RARE (check first — most specific conditions) ──────────────────
-  // Mythic Worker: works hard, socially active, physically healthy, low burnout
-  if (OCC >= 90 && SOC >= 70 && PHY >= 60 && BURN <= 40)
-    return ARCHETYPES.find((a) => a.id === 'mythic-worker')!
-
-  // Overclocked: extreme work + body collapse + extreme burnout
-  if (OCC >= 90 && PHY <= 30 && BURN >= 85)
-    return ARCHETYPES.find((a) => a.id === 'overclocked')!
-
-  // 3AM Survivor: heavy work + emotional + physical depletion + high burnout
-  if (OCC >= 80 && EMO <= 40 && PHY <= 40 && BURN >= 70)
+  // ── LEGENDARY (check first) ──────────────────────────────────────────────
+  if (OCC >= 80 && EMO <= 40 && PHY <= 40 && BURN >= 75)
     return ARCHETYPES.find((a) => a.id === 'three-am-survivor')!
 
-  // Cosmic Beaver: deeply spiritual, low work drive, emotionally rich
-  if (SPI >= 75 && OCC <= 45 && EMO >= 60)
-    return ARCHETYPES.find((a) => a.id === 'cosmic-beaver')!
-
-  // Beaver King: all dimensions balanced + low burnout
   if (allInRange(55, 75) && BURN <= 30)
     return ARCHETYPES.find((a) => a.id === 'beaver-king')!
 
-  // ── RARE ────────────────────────────────────────────────────────────────
-  // Dam Commander: both high OCC and high SOC, not critically burnt
-  if (OCC >= 70 && SOC >= 70 && BURN < 75)
+  if (SPI >= 80 && INT >= 65 && OCC <= 50)
+    return ARCHETYPES.find((a) => a.id === 'arcane-beaver')!
+
+  // ── RARE ─────────────────────────────────────────────────────────────────
+  if (OCC >= 70 && SOC >= 70)
     return ARCHETYPES.find((a) => a.id === 'dam-commander')!
 
-  // Blueprint Brain: high intellect + solid work
-  if (INT >= 80 && OCC >= 55)
-    return ARCHETYPES.find((a) => a.id === 'blueprint-brain')!
-
-  // Rainwatcher: very emotional + solitary + spiritual
-  if (EMO >= 80 && SOC <= 45 && SPI >= 55)
+  if (EMO >= 80 && SOC <= 45)
     return ARCHETYPES.find((a) => a.id === 'rainwatcher')!
 
-  // Budget Beaver: financially focused + working
-  if (FIN >= 75 && OCC >= 45)
-    return ARCHETYPES.find((a) => a.id === 'budget-beaver')!
-
-  // Chaos Rodent: mediocre across all, no standout
-  if (maxVal < 65 && maxVal - minVal <= 20)
+  if (maxVal < 60 && maxVal - minVal <= 15)
     return ARCHETYPES.find((a) => a.id === 'chaos-rodent')!
 
-  // ── COMMON ──────────────────────────────────────────────────────────────
-  // Lumber Loader: OCC is top AND high enough AND moderate burnout
-  if (topDim === 'occupational' && OCC >= 65 && BURN >= 30 && BURN <= 65)
+  // ── COMMON: rare-adjacent thresholds first ───────────────────────────────
+  if (INT >= 80)
+    return ARCHETYPES.find((a) => a.id === 'blueprint-brain')!
+
+  if (FIN >= 75)
+    return ARCHETYPES.find((a) => a.id === 'budget-beaver')!
+
+  // ── COMMON: by highest dimension ─────────────────────────────────────────
+  if (topDim === 'occupational' && OCC >= 65)
     return ARCHETYPES.find((a) => a.id === 'lumber-loader')!
 
-  // Snack Breaker: PHY is top AND low burnout
-  if (topDim === 'physical' && BURN <= 30)
+  if (topDim === 'physical' && BURN <= 40)
     return ARCHETYPES.find((a) => a.id === 'snack-breaker')!
 
-  // Campfire Buddy: SOC is top AND social + emotional thresholds
-  if (topDim === 'social' && SOC >= 65 && EMO >= 45)
+  if (topDim === 'social' && SOC >= 65)
     return ARCHETYPES.find((a) => a.id === 'campfire-buddy')!
 
-  // Hibernator: physically healthy but not working
-  if (PHY >= 70 && OCC <= 40)
-    return ARCHETYPES.find((a) => a.id === 'hibernator')!
-
-  // Lo-fi Listener: emotional lead + partial social + not overworked
-  if (EMO >= 65 && SOC >= 40 && SOC <= 70 && OCC <= 70)
+  if (topDim === 'emotional' && SOC >= 35 && SOC <= 65)
     return ARCHETYPES.find((a) => a.id === 'lofi-listener')!
 
-  // Cozy Builder: ENV is top AND high
-  if (topDim === 'environmental' && ENV >= 65)
-    return ARCHETYPES.find((a) => a.id === 'cozy-builder')!
-
-  // Fallback: match by top dimension
-  const fallbacks: Partial<Record<Dimension, string>> = {
+  // ── Fallback by top dimension ─────────────────────────────────────────────
+  const fallback: Partial<Record<Dimension, string>> = {
     occupational: 'lumber-loader',
-    physical: 'snack-breaker',
-    social: 'campfire-buddy',
-    emotional: 'lofi-listener',
-    environmental: 'cozy-builder',
+    physical:     'snack-breaker',
+    social:       'campfire-buddy',
+    emotional:    'lofi-listener',
     intellectual: 'blueprint-brain',
-    spiritual: 'cosmic-beaver',
-    financial: 'budget-beaver',
+    financial:    'budget-beaver',
+    spiritual:    'arcane-beaver',
+    environmental:'lofi-listener',
+    burnout:      'lumber-loader',
   }
-  return ARCHETYPES.find((a) => a.id === (fallbacks[topDim] ?? 'lumber-loader'))!
+
+  return ARCHETYPES.find((a) => a.id === (fallback[topDim] ?? 'lumber-loader'))!
 }
 
 export function buildResult(answers: SurveyAnswer[]): Omit<SurveyResult, 'sessionId' | 'completedAt'> {

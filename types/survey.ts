@@ -10,10 +10,14 @@ export type Dimension =
   | 'burnout'
 
 export type Lang = 'th' | 'en'
-
-export type Rarity = 'common' | 'rare' | 'super-rare'
+export type Rarity = 'common' | 'rare' | 'legendary'
 
 export type DimensionScores = Record<Dimension, number>
+
+export interface HRDActivity {
+  name: string
+  description: string
+}
 
 export interface Choice {
   id: string
@@ -26,12 +30,14 @@ export interface Choice {
 export interface Question {
   id: number
   scene: string
-  sceneEn?: string
+  sceneEn: string
+  sceneName: string
+  sceneNameEn: string
   sceneEmoji: string
   timeOfDay: 'morning' | 'midday' | 'afternoon' | 'evening' | 'night'
   question: string
   questionEn?: string
-  context: string
+  context?: string
   contextEn?: string
   choices: Choice[]
 }
@@ -49,6 +55,10 @@ export interface Archetype {
   traits: string[]
   traitsEn: string[]
   rarity: Rarity
+  stressLevel: number       // 1–10
+  stressLabel: string       // Thai e.g. "7/10 — ..."
+  hrdActivities: HRDActivity[]
+  friendBeaver: string      // archetype id of paired character
   emoji: string
   color: string
   gradient: string

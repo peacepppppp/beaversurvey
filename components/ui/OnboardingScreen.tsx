@@ -2,73 +2,66 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { Lang } from '@/types/survey'
 
 interface Props {
-  onStart: (lang: Lang, isKKU: boolean) => void
+  onStart: (lang: Lang) => void
 }
 
-type Step = 'welcome' | 'kku' | 'story'
+type Step = 'title' | 'story' | 'gate'
 
 const T = {
   th: {
+    project: 'BEAVER WORKER PROJECT',
     title: 'คุณเป็นบีเวอร์แบบไหน?',
-    subtitle: 'Beaver Worker Project',
     langBtn: 'ENG',
-    welcomeDesc: 'อาณานิคมบีเวอร์กำลังเผชิญกับฤดูฝน\nคุณจะรับมือแบบไหน?',
-    continue: 'ถัดไป →',
-    kkuQuestion: 'คุณกำลังศึกษาอยู่ในคณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น หรือไม่?',
-    kkuYes: '✓  ใช่ ฉันเป็นนักศึกษาแพทย์ มข.',
-    kkuNo: '✗  ไม่ใช่',
-    storyTitle: 'ฤดูฝนกำลังจะมา',
-    storyLines: [
-      'อาณานิคมบีเวอร์ต้องรีบสร้างเขื่อนให้เสร็จภายใน 7 วัน',
-      'แต่บีเวอร์แต่ละตัว...',
-      'ใช้ชีวิตต่างกัน  พักต่างกัน  เข้าหาเพื่อนฝูงต่างกัน',
-      'และสนใจกิจกรรมต่างกัน',
-    ],
-    storyQuestion: 'แล้วคุณล่ะ…\nเป็นบีเวอร์แบบไหนในอาณานิคมนี้?',
-    startBtn: 'ค้นหาบีเวอร์ในตัวคุณ →',
+    startBtn: 'เริ่มสำรวจอาณานิคม →',
+    rain1: 'ฤดูฝนกำลังจะมา...',
+    rain2: 'อาณานิคมบีเวอร์ต้องรีบสร้างเขื่อนให้เสร็จภายใน 7 วัน',
+    rain3: 'แต่บีเวอร์แต่ละตัว:',
+    rain4: 'ใช้ชีวิตต่างกัน  พักต่างกัน  เข้าหาเพื่อนฝูงต่างกัน',
+    rain5: 'แล้วคุณล่ะ…',
+    rain6: 'เป็นบีเวอร์แบบไหนในอาณานิคมนี้? 🦫',
+    continueBtn: 'ค้นหาตัวเอง →',
+    gatePrefix: 'ก่อนเข้าอาณานิคม ขอถามหน่อยนะ...',
+    gateQ: 'คุณเป็นบีเวอร์ที่กำลังศึกษาอยู่ในคณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น หรือไม่?',
+    gateYes: 'ใช่ 🦫',
+    gateNo: 'ไม่ใช่',
     hint: 'ใช้เวลาแค่ 3–5 นาที · ไม่มีการเก็บข้อมูลส่วนตัว',
-    types: ['16 ประเภทบีเวอร์', '25 สถานการณ์', 'ผลลัพธ์ personalized'],
   },
   en: {
+    project: 'BEAVER WORKER PROJECT',
     title: 'Which Beaver Are You?',
-    subtitle: 'Beaver Worker Project',
     langBtn: 'ภาษาไทย',
-    welcomeDesc: 'The beaver colony faces the rainy season.\nHow will you handle it?',
-    continue: 'Next →',
-    kkuQuestion: 'Are you currently a medical student at Khon Kaen University?',
-    kkuYes: '✓  Yes, I study medicine at KKU',
-    kkuNo: '✗  No',
-    storyTitle: 'The Rainy Season Is Coming',
-    storyLines: [
-      'The beaver colony must finish the dam within 7 days.',
-      'But every beaver...',
-      'Lives differently  ·  Rests differently  ·  Connects differently',
-      'And cares about different things.',
-    ],
-    storyQuestion: 'So which beaver are you\nin this colony?',
-    startBtn: 'Find Your Inner Beaver →',
-    hint: 'Only 3–5 min · No personal data collected',
-    types: ['16 Beaver Types', '25 Situations', 'Personalized Result'],
+    startBtn: 'Enter the Colony →',
+    rain1: 'The rainy season is coming...',
+    rain2: 'The beaver colony must finish the dam within 7 days.',
+    rain3: 'But every beaver:',
+    rain4: 'Lives differently  ·  Rests differently  ·  Connects differently',
+    rain5: 'So which one are you…',
+    rain6: 'in this colony? 🦫',
+    continueBtn: 'Find Yourself →',
+    gatePrefix: 'Before entering the colony, one quick question...',
+    gateQ: 'Are you currently a medical student at Khon Kaen University (KKU)?',
+    gateYes: 'Yes 🦫',
+    gateNo: 'No',
+    hint: 'Takes only 3–5 min · No personal data collected',
   },
 }
 
 export default function OnboardingScreen({ onStart }: Props) {
   const [lang, setLang] = useState<Lang>('th')
-  const [step, setStep] = useState<Step>('welcome')
-  const [isKKU, setIsKKU] = useState<boolean | null>(null)
-
+  const [step, setStep] = useState<Step>('title')
+  const router = useRouter()
   const t = T[lang]
 
-  function handleKKU(val: boolean) {
-    setIsKKU(val)
-    setStep('story')
+  function handleGateYes() {
+    onStart(lang)
   }
 
-  function handleStart() {
-    onStart(lang, isKKU ?? false)
+  function handleGateNo() {
+    router.push('/not-eligible')
   }
 
   return (
@@ -76,34 +69,31 @@ export default function OnboardingScreen({ onStart }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen flex flex-col items-center justify-center px-5 py-10"
+      className="min-h-screen flex flex-col items-center justify-center px-5 py-10 relative"
+      style={{ background: 'var(--bg-primary)' }}
     >
       {/* Lang toggle */}
       <div className="absolute top-5 right-5">
         <button
           onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
           className="text-xs px-3 py-1.5 rounded-full border font-medium transition-colors"
-          style={{
-            borderColor: 'var(--border-color)',
-            color: 'var(--text-secondary)',
-            background: 'white',
-          }}
+          style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', background: 'white' }}
         >
           {t.langBtn}
         </button>
       </div>
 
       <AnimatePresence mode="wait">
-        {/* ── STEP: WELCOME ─────────────────────────────────────────────── */}
-        {step === 'welcome' && (
+
+        {/* ── SCREEN 1: TITLE ──────────────────────────────────────────── */}
+        {step === 'title' && (
           <motion.div
-            key="welcome"
+            key="title"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="w-full max-w-sm flex flex-col items-center text-center"
           >
-            {/* Beaver emoji */}
             <motion.div
               className="text-7xl mb-5"
               animate={{ y: [0, -10, 0] }}
@@ -112,101 +102,35 @@ export default function OnboardingScreen({ onStart }: Props) {
               🦫
             </motion.div>
 
-            {/* Titles */}
             <p
-              className="text-xs font-semibold uppercase tracking-widest mb-2"
+              className="text-xs font-bold uppercase tracking-widest mb-2"
               style={{ color: 'var(--text-muted)' }}
             >
-              {t.subtitle}
+              {t.project}
             </p>
+
             <h1
-              className="text-3xl font-bold mb-4 thai-text"
+              className="text-3xl font-bold mb-8 thai-text"
               style={{ color: 'var(--text-primary)' }}
             >
               {t.title}
             </h1>
 
-            <p
-              className="text-sm leading-relaxed thai-text mb-8 whitespace-pre-line"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {t.welcomeDesc}
-            </p>
-
-            {/* Stats row */}
-            <div className="flex gap-3 mb-8 w-full">
-              {t.types.map((label) => (
-                <div
-                  key={label}
-                  className="flex-1 py-3 rounded-xl text-center"
-                  style={{ background: '#FEF6E8', border: '1px solid var(--border-card)' }}
-                >
-                  <p
-                    className="text-xs font-medium thai-text leading-snug"
-                    style={{ color: 'var(--accent-brown)' }}
-                  >
-                    {label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
             <button
-              onClick={() => setStep('kku')}
-              className="w-full py-4 rounded-2xl font-semibold text-base text-white"
+              onClick={() => setStep('story')}
+              className="w-full py-4 rounded-2xl font-semibold text-base text-white thai-text"
               style={{ background: 'linear-gradient(135deg, #8B6347, #C17F24)' }}
             >
-              {t.continue}
+              {t.startBtn}
             </button>
+
+            <p className="text-xs mt-4 thai-text" style={{ color: 'var(--text-muted)' }}>
+              {t.hint}
+            </p>
           </motion.div>
         )}
 
-        {/* ── STEP: KKU QUESTION ────────────────────────────────────────── */}
-        {step === 'kku' && (
-          <motion.div
-            key="kku"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-sm flex flex-col items-center text-center"
-          >
-            <div className="text-5xl mb-6">🏥</div>
-
-            <h2
-              className="text-lg font-semibold leading-relaxed thai-text mb-8"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {t.kkuQuestion}
-            </h2>
-
-            <div className="w-full space-y-3">
-              <button
-                onClick={() => handleKKU(true)}
-                className="w-full py-4 px-5 rounded-2xl text-sm font-medium text-left thai-text transition-all hover:shadow-md"
-                style={{
-                  background: 'white',
-                  border: '1.5px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {t.kkuYes}
-              </button>
-              <button
-                onClick={() => handleKKU(false)}
-                className="w-full py-4 px-5 rounded-2xl text-sm font-medium text-left thai-text transition-all hover:shadow-md"
-                style={{
-                  background: 'white',
-                  border: '1.5px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {t.kkuNo}
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── STEP: STORY ───────────────────────────────────────────────── */}
+        {/* ── SCREEN 2: STORY INTRO ────────────────────────────────────── */}
         {step === 'story' && (
           <motion.div
             key="story"
@@ -215,67 +139,101 @@ export default function OnboardingScreen({ onStart }: Props) {
             exit={{ opacity: 0, y: -20 }}
             className="w-full max-w-sm flex flex-col items-center text-center"
           >
-            <div className="text-5xl mb-5">🌧️</div>
+            {/* Rain drops visual */}
+            <div className="text-4xl mb-6 space-x-1">
+              {['🌧️', '🌧️', '🌧️'].map((r, i) => (
+                <motion.span
+                  key={i}
+                  className="inline-block"
+                  animate={{ y: [0, 6, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3, ease: 'easeInOut' }}
+                >
+                  {r}
+                </motion.span>
+              ))}
+            </div>
 
-            <h2
-              className="text-xl font-bold mb-6 thai-text"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {t.storyTitle}
-            </h2>
-
-            {/* Story card */}
             <div
-              className="w-full rounded-2xl p-6 mb-6 text-left space-y-3"
-              style={{ background: '#FEF6E8', border: '1px solid var(--border-card)' }}
+              className="w-full cozy-card rounded-2xl p-6 mb-6 text-left space-y-3"
             >
-              {t.storyLines.map((line, i) => (
+              {[t.rain1, t.rain2, t.rain3, t.rain4, t.rain5, t.rain6].map((line, i) => (
                 <motion.p
                   key={i}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + i * 0.12 }}
-                  className="text-sm thai-text"
-                  style={{ color: i === 0 ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                  transition={{ delay: 0.1 + i * 0.15 }}
+                  className="text-sm thai-text leading-relaxed"
+                  style={{
+                    color: i === 0 || i === 4 ? 'var(--accent-brown)' : 'var(--text-secondary)',
+                    fontWeight: i === 0 || i === 5 ? 600 : 400,
+                  }}
                 >
-                  {i === 0 ? <strong>{line}</strong> : line}
+                  {line}
                 </motion.p>
               ))}
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.65 }}
-                className="pt-3 border-t"
-                style={{ borderColor: 'var(--border-color)' }}
-              >
-                <p
-                  className="text-base font-semibold thai-text whitespace-pre-line leading-relaxed"
-                  style={{ color: 'var(--accent-brown)' }}
-                >
-                  {t.storyQuestion}
-                </p>
-              </motion.div>
             </div>
 
             <motion.button
-              onClick={handleStart}
-              initial={{ opacity: 0, y: 10 }}
+              onClick={() => setStep('gate')}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="w-full py-4 rounded-2xl font-semibold text-base text-white mb-3"
+              transition={{ delay: 1.1 }}
+              className="w-full py-4 rounded-2xl font-semibold text-base text-white thai-text"
               style={{ background: 'linear-gradient(135deg, #8B6347, #C17F24)' }}
               whileTap={{ scale: 0.97 }}
-              whileHover={{ scale: 1.02 }}
             >
-              {t.startBtn}
+              {t.continueBtn}
             </motion.button>
-
-            <p className="text-xs thai-text" style={{ color: 'var(--text-muted)' }}>
-              {t.hint}
-            </p>
           </motion.div>
         )}
+
+        {/* ── SCREEN 3: KKU GATE ───────────────────────────────────────── */}
+        {step === 'gate' && (
+          <motion.div
+            key="gate"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="w-full max-w-sm flex flex-col items-center text-center"
+          >
+            <div className="text-5xl mb-5">🏥</div>
+
+            <p
+              className="text-sm mb-3 thai-text"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {t.gatePrefix}
+            </p>
+
+            <h2
+              className="text-lg font-semibold leading-relaxed thai-text mb-8"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {t.gateQ}
+            </h2>
+
+            <div className="w-full space-y-3">
+              <motion.button
+                onClick={handleGateYes}
+                whileTap={{ scale: 0.97 }}
+                className="w-full py-4 rounded-2xl font-semibold text-white text-base thai-text"
+                style={{ background: 'linear-gradient(135deg, #8B6347, #C17F24)' }}
+              >
+                {t.gateYes}
+              </motion.button>
+
+              <motion.button
+                onClick={handleGateNo}
+                whileTap={{ scale: 0.97 }}
+                className="w-full py-4 rounded-2xl text-sm thai-text cozy-card hover:opacity-80 transition-opacity"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {t.gateNo}
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
       </AnimatePresence>
     </motion.div>
   )
