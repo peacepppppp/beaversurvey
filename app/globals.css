@@ -1,26 +1,151 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #FDFAF4;
+  --bg-card: #FFFFFF;
+  --text-primary: #2C1A0F;
+  --text-secondary: #7A5A40;
+  --text-muted: #B09070;
+  --accent-brown: #8B6347;
+  --accent-amber: #C17F24;
+  --border-color: #E8D5B0;
+  --border-card: #F0E2C8;
+  --shadow-warm: rgba(139, 99, 71, 0.12);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sarabun), 'Sarabun', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Cozy card ─────────────────────────────────────────────────────────── */
+.cozy-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  box-shadow: 0 2px 12px var(--shadow-warm);
+}
+
+/* ── Glass card (translucent warm) ─────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 252, 245, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-card);
+  box-shadow: 0 2px 16px var(--shadow-warm);
+}
+
+/* ── Progress fill ──────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #8B6347, #C17F24, #D4945A);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+/* ── Choice button ──────────────────────────────────────────────────────── */
+.choice-btn {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.choice-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes revealScale {
+  0%   { transform: scale(0.6); opacity: 0; filter: blur(20px); }
+  60%  { transform: scale(1.05); opacity: 0.9; filter: blur(2px); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+
+.animate-float    { animation: float 4s ease-in-out infinite; }
+.animate-fade-up  { animation: fadeUp 0.5s ease-out forwards; }
+.animate-reveal   { animation: revealScale 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* ── Rain background ────────────────────────────────────────────────────── */
+.rain-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.rain-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(120, 160, 200, 0.08) 0%, rgba(80, 130, 180, 0.14) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes rain-drop {
+  0%   { transform: translateY(-60px) translateX(0px); opacity: 0; }
+  5%   { opacity: 0.5; }
+  95%  { opacity: 0.3; }
+  100% { transform: translateY(110vh) translateX(-10px); opacity: 0; }
+}
+
+.rain-drop {
+  position: fixed;
+  top: 0;
+  width: 1.5px;
+  background: linear-gradient(180deg, transparent, rgba(140, 185, 220, 0.55));
+  border-radius: 99px;
+  pointer-events: none;
+  z-index: 1;
+  animation: rain-drop linear infinite;
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+.thai-text {
+  line-height: 1.75;
+  letter-spacing: 0.01em;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Rarity badges ──────────────────────────────────────────────────────── */
+.rarity-common {
+  background: #F5EDD8;
+  color: #8B6347;
+  border: 1px solid #E8D5B0;
+}
+
+.rarity-rare {
+  background: #EBF3F8;
+  color: #2A6A9E;
+  border: 1px solid #C2DCF0;
+}
+
+.rarity-super-rare {
+  background: linear-gradient(135deg, #FDF4FF, #F0E8FF);
+  color: #7C3AED;
+  border: 1px solid #DDD0FF;
 }
