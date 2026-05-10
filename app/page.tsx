@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { Lang, SurveyResult } from '@/types/survey'
+import { Lang, SurveyAnswer, SurveyResult } from '@/types/survey'
 import OnboardingScreen from '@/components/ui/OnboardingScreen'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import SurveyContainer from '@/components/survey/SurveyContainer'
@@ -14,6 +14,7 @@ export default function Home() {
   const [phase, setPhase] = useState<Phase>('onboarding')
   const [surveyPhase, setSurveyPhase] = useState<'survey' | 'loading' | 'result'>('survey')
   const [result, setResult] = useState<SurveyResult | null>(null)
+  const [answers, setAnswers] = useState<SurveyAnswer[]>([])
   const [lang, setLang] = useState<Lang>('th')
   const [isKKU, setIsKKU] = useState<boolean | null>(null)
 
@@ -29,8 +30,9 @@ export default function Home() {
     if (p === 'loading') setPhase('loading')
   }, [])
 
-  const handleResult = useCallback((r: SurveyResult) => {
+  const handleResult = useCallback((r: SurveyResult, a: SurveyAnswer[]) => {
     setResult(r)
+    setAnswers(a)
   }, [])
 
   const handleLoadingComplete = useCallback(() => {
@@ -39,6 +41,7 @@ export default function Home() {
 
   const handleRetake = useCallback(() => {
     setResult(null)
+    setAnswers([])
     setIsKKU(null)
     setPhase('onboarding')
     setSurveyPhase('survey')
@@ -69,6 +72,7 @@ export default function Home() {
           <ResultCard
             key="result"
             result={result}
+            answers={answers}
             onRetake={handleRetake}
             lang={lang}
             isKKU={isKKU ?? false}

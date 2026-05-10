@@ -12,7 +12,7 @@ type Phase = 'survey' | 'loading' | 'result'
 interface Props {
   phase: Phase
   onPhaseChange: (phase: Phase) => void
-  onResult: (result: SurveyResult) => void
+  onResult: (result: SurveyResult, answers: SurveyAnswer[]) => void
   lang: Lang
 }
 
@@ -75,7 +75,7 @@ export default function SurveyContainer({ phase, onPhaseChange, onResult, lang }
             body: JSON.stringify({ answers: newAnswers }),
           })
           const data = await res.json()
-          onResult(data)
+          onResult(data, newAnswers)
         } catch {
           const { buildResult } = await import('@/lib/scoring')
           const resultData = buildResult(newAnswers)
@@ -84,7 +84,7 @@ export default function SurveyContainer({ phase, onPhaseChange, onResult, lang }
             ...resultData,
             sessionId,
             completedAt: new Date().toISOString(),
-          })
+          }, newAnswers)
         }
       } else {
         setTimeout(() => setCurrentIndex((i) => i + 1), 400)
