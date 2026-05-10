@@ -85,12 +85,13 @@ function buildPayload(result: SurveyResult, answers: SurveyAnswer[]) {
 }
 
 async function submitToSheets(payload: object): Promise<void> {
-  // No Content-Type header = text/plain = simple request (no preflight)
-  // GAS responds with Access-Control-Allow-Origin: * so CORS is fine
-  await fetch(GAS_URL, {
+  console.log('[GAS] sending payload:', payload)
+  const res = await fetch(GAS_URL, {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+  const text = await res.text()
+  console.log('[GAS] response:', text)
 }
 
 async function submitWithRetry(
