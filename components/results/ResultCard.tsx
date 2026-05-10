@@ -85,10 +85,10 @@ function buildPayload(result: SurveyResult, answers: SurveyAnswer[]) {
 }
 
 async function submitToSheets(payload: object): Promise<void> {
-  // no-cors: avoids CORS preflight, data still reaches GAS
+  // No Content-Type header = text/plain = simple request (no preflight)
+  // GAS responds with Access-Control-Allow-Origin: * so CORS is fine
   await fetch(GAS_URL, {
     method: 'POST',
-    mode: 'no-cors',
     body: JSON.stringify(payload),
   })
 }
