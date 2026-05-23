@@ -34,3 +34,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Deployment & Google Sheets webhook
+
+See `DEPLOYMENT.md` for full instructions on configuring a Google Apps Script webhook, payload format, and testing commands. A sample CSV header file for creating your destination sheet is available at `scripts/sample_sheet_headers.csv`.
+
+Notes:
+- Static beaver placeholders are available under `public/beavers/*.svg`. Add production PNG/SVG assets there named by archetype id if you want customized images.

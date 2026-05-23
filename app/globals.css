@@ -30,6 +30,21 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Mobile friendly spacing and touch targets */
+button, .choice-btn {
+  min-height: 44px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --base-font-size: 16px;
+  }
+  body { font-size: var(--base-font-size); }
+  .cozy-card { padding: 12px; }
+}
+
 /* ── Cozy card ─────────────────────────────────────────────────────────── */
 .cozy-card {
   background: var(--bg-card);

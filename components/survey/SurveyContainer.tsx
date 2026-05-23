@@ -118,23 +118,13 @@ export default function SurveyContainer({ phase, onPhaseChange, onResult, lang }
       const nextIndex = currentIndex + 1
 
       if (isLast) {
-        onPhaseChange('loading')
-        try {
-          const res = await fetch('/api/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ answers: newAnswers }),
-          })
-          const data = await res.json()
-          onResult(data, newAnswers)
-        } catch {
-          const { buildResult } = await import('@/lib/scoring')
-          const resultData = buildResult(newAnswers)
-          onResult(
-            { ...resultData, sessionId: crypto.randomUUID(), completedAt: new Date().toISOString() },
-            newAnswers
-          )
-        }
+        // compute result locally and let parent route to activity selection
+        const { buildResult } = await import('@/lib/scoring')
+        const resultData = buildResult(newAnswers)
+        onResult(
+          { ...resultData, sessionId: crypto.randomUUID(), completedAt: new Date().toISOString() },
+          newAnswers
+        )
         return
       }
 

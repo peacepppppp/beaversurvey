@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lang, SurveyAnswer, SurveyResult } from '@/types/survey'
 import { getFriendArchetype } from '@/data/archetypes'
+import { getBeaverImagePath } from '@/lib/beaverImages'
 import ShareButton from './ShareButton'
 
 const GAS_URL =
@@ -83,13 +84,13 @@ function Particles({ rarity }: { rarity: 'common' | 'rare' | 'legendary' }) {
 }
 
 // ── GAS submission ─────────────────────────────────────────────────────────
-function buildPayload(result: SurveyResult, answers: SurveyAnswer[]) {
+function buildPayload(result: SurveyResult, answers: SurveyAnswer[], activities?: string[]) {
   const s = result.normalizedScores
   const a = result.archetype
   const qAnswers: Record<string, string> = {}
   answers.forEach((ans, i) => { qAnswers[`q${i + 1}`] = ans.choiceId })
 
-  return {
+  const payload: Record<string, unknown> = {
     user_id: result.sessionId,
     ...qAnswers,
     soc_score: s.social, occ_score: s.occupational, int_score: s.intellectual,
@@ -106,6 +107,10 @@ function buildPayload(result: SurveyResult, answers: SurveyAnswer[]) {
     strat_score: Math.round((s.intellectual + s.occupational) / 2),
     completed_at: result.completedAt,
   }
+
+  if (activities && activities.length > 0) payload.selected_activities = activities
+
+  return payload
 }
 
 async function submitWithRetry(payload: object, maxRetries = 3): Promise<boolean> {
@@ -199,11 +204,15 @@ export default function ResultCard({ result, answers, onRetake, lang }: Props) {
   const [showParticles, setShowParticles] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('sending')
   const [showBanner, setShowBanner] = useState(true)
+  const [imageFailed, setImageFailed] = useState(false)
   const submitted = useRef(false)
   const storyCardRef = useRef<HTMLDivElement>(null)
 
   const name = lang === 'th' ? archetype.name : archetype.nameEn
   const { displayed: typedName, done: typewriterDone } = useTypewriter(name, 70, 600)
+  const beaverImage = getBeaverImagePath(archetype.id)
+  const selectedActivities = (result as any).selectedActivities ?? (result as any).selected_activities ?? []
+  const topDimension = archetype.dominantDimensions?.[0] ?? 'social'
 
   const friendArchetype = getFriendArchetype(archetype)
   const rarityConfig = RARITY_CONFIG[archetype.rarity]
@@ -221,7 +230,8 @@ export default function ResultCard({ result, answers, onRetake, lang }: Props) {
   useEffect(() => {
     if (submitted.current) return
     submitted.current = true
-    submitWithRetry(buildPayload(result, answers)).then((ok) => {
+    const activities = (result as any).selectedActivities ?? (result as any).selected_activities ?? []
+    submitWithRetry(buildPayload(result, answers, activities)).then((ok) => {
       setSubmitStatus(ok ? 'success' : 'failed')
       if (ok) setTimeout(() => setShowBanner(false), 3000)
     })
@@ -242,6 +252,7 @@ export default function ResultCard({ result, answers, onRetake, lang }: Props) {
     emotional:    { th: 'อารมณ์',      en: 'Emotional',    emoji: '💜' },
     physical:     { th: 'ร่างกาย',     en: 'Physical',     emoji: '⚡' },
   }
+  const topDimensionLabel = DIM_LABELS[topDimension]
 
   return (
     <motion.div
@@ -347,6 +358,34 @@ export default function ResultCard({ result, answers, onRetake, lang }: Props) {
             {archetype.emoji}
           </motion.div>
 
+          <div className="mx-auto mb-4 max-w-[12rem]">
+            {!imageFailed ? (
+              <img
+                src={beaverImage}
+                alt={name}
+                className="mx-auto h-48 w-full object-contain rounded-3xl shadow-xl"
+                onError={() => setImageFailed(true)}
+              />
+            ) : (
+              <div className="mx-auto flex h-48 w-full items-center justify-center rounded-3xl bg-white/10 text-6xl text-white">
+                {archetype.emoji}
+              </div>
+            )}
+          </div>
+
+          {/* Top dimension badge */}
+          {topDimensionLabel && (
+            <motion.span
+              className="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full font-semibold mb-4"
+              style={{ background: `${archetype.color}18`, color: archetype.color, border: `1px solid ${archetype.color}30` }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              {topDimensionLabel.emoji} {lang === 'th' ? topDimensionLabel.th : topDimensionLabel.en}
+            </motion.span>
+          )}
+
           {/* Typewriter name */}
           <h1 className="text-2xl font-bold mb-1 thai-text min-h-[2rem]" style={{ color: 'var(--text-primary)' }}>
             {typedName}
@@ -451,6 +490,30 @@ export default function ResultCard({ result, answers, onRetake, lang }: Props) {
           })}
         </div>
       </motion.div>
+
+      {selectedActivities.length > 0 && (
+        <motion.div
+          className="w-full max-w-sm cozy-card rounded-2xl p-5 mb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1 }}
+        >
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+            {lang === 'th' ? 'กิจกรรมที่คุณเลือก' : 'Selected Activities'}
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {selectedActivities.map((activity: string, index: number) => (
+              <span
+                key={index}
+                className="text-xs px-3 py-1.5 rounded-full thai-text font-medium"
+                style={{ background: `${archetype.color}12`, color: archetype.color, border: `1px solid ${archetype.color}25` }}
+              >
+                {activity}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── HRD Activities ── */}
       <motion.div

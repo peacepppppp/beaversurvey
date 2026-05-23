@@ -1,12 +1,10 @@
-import { Dimension, DimensionScores, SurveyAnswer, SurveyResult } from '@/types/survey'
+import { Dimension, DimensionScores, SurveyAnswer, SurveyResult, Archetype } from '@/types/survey'
 import { ARCHETYPES } from '@/data/archetypes'
-import { QUESTIONS } from '@/data/questions'
 
-const SCORED_DIMENSIONS: Dimension[] = [
+const DIMENSIONS: Dimension[] = [
   'social', 'occupational', 'intellectual', 'environmental',
   'spiritual', 'financial', 'emotional', 'physical',
 ]
-const ALL_DIMENSIONS: Dimension[] = [...SCORED_DIMENSIONS, 'burnout']
 
 function emptyScores(): DimensionScores {
   return {
@@ -16,114 +14,88 @@ function emptyScores(): DimensionScores {
 }
 
 export function calculateRawScores(answers: SurveyAnswer[]): DimensionScores {
-  const raw = emptyScores()
-  for (const answer of answers) {
-    for (const dim of ALL_DIMENSIONS) {
-      raw[dim] += answer.scores[dim] ?? 0
+  const totals = emptyScores()
+  for (const a of answers) {
+    for (const dim of DIMENSIONS) {
+      const v = a.scores[dim] ?? 0
+      totals[dim] += v
     }
   }
-  return raw
-}
-
-function computeTheoreticalMax(): DimensionScores {
-  const maxScores = emptyScores()
-  for (const question of QUESTIONS) {
-    const dimMaxes = emptyScores()
-    for (const choice of question.choices) {
-      for (const dim of ALL_DIMENSIONS) {
-        const val = choice.scores[dim] ?? 0
-        if (val > dimMaxes[dim]) dimMaxes[dim] = val
-      }
-    }
-    for (const dim of ALL_DIMENSIONS) {
-      maxScores[dim] += dimMaxes[dim]
-    }
-  }
-  return maxScores
+  return totals
 }
 
 export function normalizeScores(raw: DimensionScores): DimensionScores {
-  const theoretical = computeTheoreticalMax()
+  // normalize to percentage of max possible (12 questions)
   const normalized = emptyScores()
-  for (const dim of ALL_DIMENSIONS) {
-    const max = theoretical[dim]
-    normalized[dim] = max > 0 ? Math.max(0, Math.round((raw[dim] / max) * 100)) : 0
+  const max = 12
+  for (const dim of DIMENSIONS) {
+    normalized[dim] = Math.round((raw[dim] / max) * 100)
   }
+  normalized.burnout = 0
   return normalized
 }
 
-export function selectArchetype(s: DimensionScores) {
-  const {
-    social: SOC, occupational: OCC, intellectual: INT, environmental: ENV,
-    spiritual: SPI, financial: FIN, emotional: EMO, physical: PHY,
-    burnout: BURN,
-  } = s
+const TIE_PRIORITY: Dimension[] = [
+  'intellectual','occupational','social','emotional','physical','spiritual','environmental','financial'
+]
 
-  const vals = SCORED_DIMENSIONS.map((d) => s[d])
-  const maxVal = Math.max(...vals)
-  const minVal = Math.min(...vals)
-  const topDim = SCORED_DIMENSIONS.slice().sort((a, b) => s[b] - s[a])[0]
-  const allInRange = (lo: number, hi: number) => vals.every((v) => v >= lo && v <= hi)
+const RARE_MAP: Record<Dimension, { rare: string; normal: string }> = {
+  physical:     { rare: 'lumber-loader', normal: 'snack-breaker' },
+  social:       { rare: 'chaos-rodent', normal: 'campfire-buddy' },
+  environmental:{ rare: 'cozy-builder', normal: 'cozy-builder' },
+  intellectual: { rare: 'alchemist-beaver', normal: 'blueprint-brain' },
+  occupational: { rare: '3am-survivor', normal: 'dam-commander' },
+  emotional:    { rare: 'rainwatcher', normal: 'rainwatcher' },
+  spiritual:    { rare: 'cosmic-beaver', normal: 'cosmic-beaver' },
+  financial:    { rare: 'beaver-king', normal: 'beaver-king' },
+}
 
-  // ── LEGENDARY (check first) ──────────────────────────────────────────────
-  if (OCC >= 80 && EMO <= 40 && PHY <= 40 && BURN >= 75)
-    return ARCHETYPES.find((a) => a.id === 'three-am-survivor')!
+function findArchetypeById(id: string): Archetype | null {
+  const a = ARCHETYPES.find((x) => x.id === id)
+  return a ?? null
+}
 
-  if (allInRange(55, 75) && BURN <= 30)
-    return ARCHETYPES.find((a) => a.id === 'beaver-king')!
+function buildMinimalArchetype(id: string, displayName: string): Archetype {
+  return {
+    id,
+    name: displayName,
+    nameEn: displayName,
+    quote: '', quoteEn: '', tagline: '', taglineEn: '',
+    description: '', descriptionEn: '', traits: [], traitsEn: [],
+    rarity: 'common', stressLevel: 5, stressLabel: '5/10', hrdActivities: [],
+    friendBeaver: '', emoji: '🦫', color: '#888', gradient: 'from-gray-300 to-gray-500', dominantDimensions: []
+  }
+}
 
-  if (SPI >= 80 && INT >= 65 && OCC <= 50)
-    return ARCHETYPES.find((a) => a.id === 'arcane-beaver')!
+export function selectArchetype(raw: DimensionScores) {
+  // find top score(s)
+  const vals = DIMENSIONS.map((d) => ({ d, v: raw[d] }))
+  const maxVal = Math.max(...vals.map((x) => x.v))
+  const topDims = vals.filter((x) => x.v === maxVal).map((x) => x.d)
 
-  // ── RARE ─────────────────────────────────────────────────────────────────
-  if (OCC >= 70 && SOC >= 70)
-    return ARCHETYPES.find((a) => a.id === 'dam-commander')!
-
-  if (EMO >= 80 && SOC <= 45)
-    return ARCHETYPES.find((a) => a.id === 'rainwatcher')!
-
-  if (maxVal < 60 && maxVal - minVal <= 15)
-    return ARCHETYPES.find((a) => a.id === 'chaos-rodent')!
-
-  // ── COMMON: rare-adjacent thresholds first ───────────────────────────────
-  if (INT >= 80)
-    return ARCHETYPES.find((a) => a.id === 'blueprint-brain')!
-
-  if (FIN >= 75)
-    return ARCHETYPES.find((a) => a.id === 'budget-beaver')!
-
-  // ── COMMON: by highest dimension ─────────────────────────────────────────
-  if (topDim === 'occupational' && OCC >= 65)
-    return ARCHETYPES.find((a) => a.id === 'lumber-loader')!
-
-  if (topDim === 'physical' && BURN <= 40)
-    return ARCHETYPES.find((a) => a.id === 'snack-breaker')!
-
-  if (topDim === 'social' && SOC >= 65)
-    return ARCHETYPES.find((a) => a.id === 'campfire-buddy')!
-
-  if (topDim === 'emotional' && SOC >= 35 && SOC <= 65)
-    return ARCHETYPES.find((a) => a.id === 'lofi-listener')!
-
-  // ── Fallback by top dimension ─────────────────────────────────────────────
-  const fallback: Partial<Record<Dimension, string>> = {
-    occupational: 'lumber-loader',
-    physical:     'snack-breaker',
-    social:       'campfire-buddy',
-    emotional:    'lofi-listener',
-    intellectual: 'blueprint-brain',
-    financial:    'budget-beaver',
-    spiritual:    'arcane-beaver',
-    environmental:'lofi-listener',
-    burnout:      'lumber-loader',
+  // tie-breaker
+  let chosen: Dimension
+  if (topDims.length === 1) chosen = topDims[0]
+  else {
+    chosen = TIE_PRIORITY.find((p) => topDims.includes(p)) ?? topDims[0]
   }
 
-  return ARCHETYPES.find((a) => a.id === (fallback[topDim] ?? 'lumber-loader'))!
+  // rare rule: if score >= 9 -> rare
+  const isRare = maxVal >= 9
+  const map = RARE_MAP[chosen]
+  const archetypeId = isRare ? map.rare : map.normal
+
+  const found = findArchetypeById(archetypeId)
+  if (found) return found
+
+  // fallback minimal archetype
+  const displayName = archetypeId.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join(' ')
+  return buildMinimalArchetype(archetypeId, displayName)
 }
 
 export function buildResult(answers: SurveyAnswer[]): Omit<SurveyResult, 'sessionId' | 'completedAt'> {
   const rawScores = calculateRawScores(answers)
   const normalizedScores = normalizeScores(rawScores)
-  const archetype = selectArchetype(normalizedScores)
+  const archetype = selectArchetype(rawScores)
   return { rawScores, normalizedScores, archetype }
 }

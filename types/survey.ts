@@ -77,4 +77,6 @@ export interface SurveyResult {
   normalizedScores: DimensionScores
   archetype: Archetype
   completedAt: string
+  selectedActivities?: string[]
+  dimensionTotals?: DimensionScores
 }
